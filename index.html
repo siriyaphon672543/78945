@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>คุณเป็นนักรับมือความผิดพลาดสายไหน?</title>
+
+<style>
+@font-face {
+  font-family: 'Maaja';
+  src: url('fonts/maaja.ttf') format('truetype');
+}
+
+/* overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.35);
+  z-index: 0;
+}
+
+/* body */
+body {
+  font-family: 'Maaja', sans-serif;
+  background-image: url("images/13.png");
+  background-size: cover;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* container */
+.container {
+  position: relative;
+  z-index: 1;
+  width: 90%;
+  max-width: 800px;
+}
+
+/* TITLE */
+h1 {
+  font-size: clamp(34px, 8vw, 52px);
+  text-align: center;
+  margin-bottom: 10px;
+  -webkit-text-stroke: 1.5px #000; 
+  color: #000;
+}
+
+/* progress */
+#progress {
+  text-align: left;
+  margin: 10px 0;
+  font-size: clamp(24px, 5vw, 32px);
+  -webkit-text-stroke: 1px #000;
+  color: #333;
+}
+
+/* QUESTION */
+#question {
+  font-size: clamp(32px, 7vw, 46px);
+  text-align: center;
+  margin: 20px 0;
+  line-height: 1.3;
+  -webkit-text-stroke: 1.8px #000; 
+  color: #000;
+}
+
+/* ANSWER - [ปรับแต่งใหม่ให้สวยงาม มีมิติโปร่งแสง] */
+.answer-btn {
+  font-family: 'Maaja', sans-serif;
+  font-size: clamp(22px, 5vw, 28px);
+  color: #2b2b2b;
+  -webkit-text-stroke: 0.5px #2b2b2b;
+
+  width: 100%;
+  padding: 16px 24px;
+  margin: 14px 0;
+  text-align: left;
+  
+  /* เอฟเฟกต์กระจกโปร่งแสง (Glassmorphism) */
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  
+  /* เส้นขอบและมุมมน */
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 18px;
+  
+  /* เงาละมุนให้ปุ่มดูลอยมีมิติ */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05), 
+              inset 0 1px 2px rgba(255, 255, 255, 0.5);
+  
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* เอฟเฟกต์เมื่อเมาส์ชี้ (Hover) */
+.answer-btn:hover {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08), 
+              inset 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+/* เอฟเฟกต์เมื่อกดคลิก (Active) */
+.answer-btn:active {
+  transform: translateY(1px) scale(0.99);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+#result {
+  text-align: center;
+}
+
+#resultImage {
+  width: 100%;
+  max-width: 450px;
+  border-radius: 12px;
+  display: block;
+  margin: 0 auto 20px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+/* สไตล์เฉพาะสำหรับกลุ่มปุ่มในหน้าผลลัพธ์ */
+.result-btn-group {
+  padding: 0 10px;
+  margin-top: 20px;
+}
+
+.btn-download {
+  background: rgba(255, 255, 255, 0.9) !important;
+  text-align: center !important;
+}
+
+.btn-instagram {
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important;
+  color: #ffffff !important;
+  -webkit-text-stroke: 0px !important; /* ปิดเส้นขอบเพื่อให้ตัวหนังสือสีขาวชัดเจน */
+  text-align: center !important;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>คุณเป็นนักรับมือความผิดพลาดสายไหน?</h1>
+
+<div id="quiz">
+  <div id="progress"></div>
+  <div id="question"></div>
+  <div id="answers"></div>
+</div>
+
+<div id="result" style="display:none;">
+  <img id="resultImage">
+  <p id="resultDescription"></p>
+  
+  <div class="result-btn-group">
+    <button onclick="downloadImage()" class="answer-btn btn-download">
+      💾 บันทึกรูปภาพลงเครื่อง
+    </button>
+    <button onclick="shareResult()" class="answer-btn btn-instagram">
+      📸 แชร์ผลลัพธ์ / เปิด Instagram
+    </button>
+  </div>
+</div>
+
+</div>
+
+<script>
+
+const questions = [
+{
+question: "เมื่อคุณทำคะแนนสอบได้น้อยกว่าที่คาดหวัง",
+answers: [
+{text:"รู้สึกแย่และคิดว่าตัวเองไม่เก่งพอ", type:"A"},
+{text:"วิเคราะห์ว่าพลาดตรงไหนและวางแผนแก้ไข", type:"B"},
+{text:"ปล่อยผ่าน ไม่อยากคิดถึงเรื่องนั้น", type:"C"},
+{text:"ขอคำแนะนำจากครูหรือเพื่อนทันที", type:"D"}
+]
+},
+{
+question: "เมื่อทำงานกลุ่มผิดพลาดจนส่งผลต่อทีม",
+answers: [
+{text:"โทษตัวเองอยู่หลายวัน", type:"A"},
+{text:"ยอมรับความผิดและช่วยหาทางแก้ไข", type:"B"},
+{text:"พยายามหลีกเลี่ยงการพูดถึงเรื่องนั้น", type:"C"},
+{text:"ขอความร่วมมือจากเพื่อนเพื่อแก้ปัญหา", type:"D"}
+]
+},
+{
+question: "หากต้องลองทำสิ่งใหม่ที่มีโอกาสล้มเหลว",
+answers: [
+{text:"ไม่ค่อยกล้าลอง เพราะกลัวผิดพลาด", type:"A"},
+{text:"กล้าลอง เพราะมองว่าเป็นโอกาสเรียนรู้", type:"B"},
+{text:"ลองบ้างไม่ลองบ้าง ขึ้นอยู่กับสถานการณ์", type:"C"},
+{text:"ลองถ้ามีคนช่วยหรือคอยแนะนำ", type:"D"}
+]
+},
+{
+question: "เมื่อถูกวิจารณ์เกี่ยวกับผลงาน",
+answers: [
+{text:"รู้สึกเสียใจและเก็บมาคิดมาก", type:"A"},
+{text:"รับฟังและนำไปปรับปรุง", type:"B"},
+{text:"ฟังบ้างไม่ฟังบ้าง", type:"C"},
+{text:"ถามเพิ่มเติมเพื่อเข้าใจและพัฒนาตนเอง", type:"D"}
+]
+},
+{
+question: "เมื่อทำผิดซ้ำในเรื่องเดิม",
+answers: [
+{text:"รู้สึกหมดกำลังใจ", type:"A"},
+{text:"พยายามหาวิธีใหม่ในการแก้ปัญหา", type:"B"},
+{text:"คิดว่าเป็นเรื่องปกติ", type:"C"},
+{text:"ขอความช่วยเหลือจากคนที่ทำได้ดีกว่า", type:"D"}
+]
+},
+{
+question: "คุณคิดว่าความผิดพลาดคืออะไร?",
+answers: [
+{text:"หลักฐานว่าตนเองยังไม่เก่ง", type:"A"},
+{text:"โอกาสในการเรียนรู้และพัฒนา", type:"B"},
+{text:"เรื่องที่ทุกคนต้องเจออยู่แล้ว", type:"C"},
+{text:"สิ่งที่ควรแก้ไขร่วมกับผู้อื่น", type:"D"}
+]
+},
+{
+question: "หลังจากล้มเหลวครั้งใหญ่ คุณมักจะ...",
+answers: [
+{text:"ใช้เวลานานกว่าจะกลับมามีกำลังใจ", type:"A"},
+{text:"กลับมาสู้ใหม่พร้อมบทเรียนที่ได้รับ", type:"B"},
+{text:"ลืมมันแล้วเดินหน้าต่อ", type:"C"},
+{text:"พูดคุยกับคนรอบข้างเพื่อฟื้นกำลังใจ", type:"D"}
+]
+},
+{
+question: "เวลามีคนอื่นทำผิดพลาด",
+answers: [
+{text:"เข้าใจ เพราะตนเองก็เคยผิดพลาด", type:"A"},
+{text:"ช่วยเขาวิเคราะห์และพัฒนา", type:"B"},
+{text:"มองว่าเป็นเรื่องธรรมดา", type:"C"},
+{text:"สนับสนุนและให้กำลังใจ", type:"D"}
+]
+},
+{
+question: "เมื่อคุณเห็นเพื่อนประสบความสำเร็จในสิ่งที่คุณเคยล้มเหลว",
+answers: [
+{text:"รู้สึกว่าตัวเองด้อยกว่า", type:"A"},
+{text:"ใช้เป็นแรงบันาลใจในการพัฒนาตนเอง", type:"B"},
+{text:"ไม่คิดอะไรมาก ต่างคนต่างเส้นทาง", type:"C"},
+{text:"ขอคำแนะนำหรือเรียนรู้จากเพื่อนคนนั้น", type:"D"}
+]
+},
+{
+question: "หากคุณได้รับโอกาสให้แก้ไขงานที่เคยทำผิดพลาด",
+answers: [
+{text:"กังวลว่าจะผิดพลาดอีกครั้ง", type:"A"},
+{text:"มองว่าเป็นโอกาสที่ดีในการพัฒนาผลงาน", type:"B"},
+{text:"ทำไปตามหน้าที่ ไม่ได้คาดหวังมากนัก", type:"C"},
+{text:"ปรึกษาผู้อื่นก่อนเพื่อให้ทำได้ดีขึ้น", type:"D"}
+]
+},
+{
+question: "ข้อใดใกล้เคียงกับแนวคิดของคุณมากที่สุด",
+answers: [
+{text:"ความผิดพลาดทำให้ฉันรู้สึกไม่มั่นใจในตัวเอง", type:"A"},
+{text:"ความผิดพลาดคือครูที่ดีที่สุด", type:"B"},
+{text:"ความผิดพลาดเป็นเรื่องธรรมดาของชีวิต", type:"C"},
+{text:"ความผิดพลาดแก้ไขได้ด้วยความร่วมมือ", type:"D"}
+]
+}
+];
+
+let current = 0;
+let score = {A:0,B:0,C:0,D:0};
+
+function load(){
+    const q = questions[current];
+
+    document.getElementById("progress").innerText =
+        `ข้อ ${current+1}/${questions.length}`;
+
+    document.getElementById("question").innerText = q.question;
+
+    const box = document.getElementById("answers");
+    box.innerHTML = "";
+
+    q.answers.forEach(a=>{
+        const btn = document.createElement("button");
+        btn.className = "answer-btn";
+        
+        // ใส่ Emoji นำหน้าข้อความให้สวยงามตามไทป์
+        const icons = { A: "😔", B: "🌱", C: "☁️", D: "👥" };
+        const currentIcon = icons[a.type] || "•";
+        btn.innerText = `${currentIcon}  ${a.text}`;
+
+        btn.onclick = ()=>{
+            score[a.type]++;
+            current++;
+            current < questions.length ? load() : result();
+        };
+
+        box.appendChild(btn);
+    });
+}
+
+// =======================
+function result(){
+    document.getElementById("quiz").style.display="none";
+    document.getElementById("result").style.display="block";
+
+    const type = Object.keys(score)
+        .reduce((a,b)=>score[a]>score[b]?a:b);
+
+    const map = {
+        A:{img:"images/TheSelf-Critic.png"},
+        B:{img:"images/TheGrowthSeeker.png"},
+        C:{img:"images/TheEasyMover.png"},
+        D:{img:"images/TheCollaborator.png"}
+    };
+
+    // แสดงเฉพาะรูปภาพผลลัพธ์ ไม่แสดงคำภาษาอังกฤษแล้ว
+    document.getElementById("resultImage").src = map[type].img;
+}
+
+// =======================
+// [สำหรับมือถือ] บันทึกรูปภาพผลลัพธ์โดยตรงจากไฟล์รูปภาพ
+async function downloadImage(){
+    const img = document.getElementById("resultImage");
+    if(!img.src) return alert("ไม่พบรูปภาพผลลัพธ์");
+
+    try {
+        const response = await fetch(img.src);
+        const blob = await response.blob();
+        const file = new File([blob], "result.png", { type: blob.type });
+
+        // หากเปิดบนมือถือและรองรับระบบแชร์ (ซึ่งบันทึกรูปได้ด้วย)
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: 'บันทึกรูปภาพผลลัพธ์',
+                text: 'บันทึกรูปภาพนี้ลงในเครื่องของคุณ'
+            });
+        } else {
+            // สำรองสำหรับเบราว์เซอร์ทั่วไป
+            const a = document.createElement("a");
+            a.href = img.src;
+            a.download = "result.png";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    } catch (error) {
+        // หากติดปัญหาเรื่องการโหลดไฟล์ (เช่น CORS) ให้เปิดรูปในแท็บใหม่เพื่อให้ผู้ใช้กดค้างเพื่อเซฟ
+        window.open(img.src, '_blank');
+    }
+}
+
+// =======================
+// [สำหรับมือถือ] แชร์ไปแอปอื่น หรือพยายามเปิด Instagram
+async function shareResult(){
+    const img = document.getElementById("resultImage");
+    if(!img.src) return alert("ไม่พบรูปภาพผลลัพธ์");
+
+    try{
+        const res = await fetch(img.src);
+        const blob = await res.blob();
+        const file = new File([blob], "result.png", {type:blob.type});
+
+        // เปิดแผงแชร์ของระบบ iOS/Android เพื่อให้ผู้ใช้เลือกแชร์เข้า IG, Line หรือบันทึกรูปภาพได้ในที่เดียว
+        if(navigator.canShare && navigator.canShare({files:[file]})){
+            await navigator.share({
+                files:[file],
+                title:"ผลลัพธ์ของฉัน",
+                text:"ฉันได้ผลลัพธ์นี้จากแบบทดสอบ ลองเล่นดูสิ!"
+            });
+        } else {
+            // ถ้าแชร์แบบไฟล์ไม่ได้ ให้เปิดแอป Instagram ตรงๆ
+            openInstagramDirect();
+        }
+    }catch(e){
+        openInstagramDirect();
+    }
+}
+
+// ฟังก์ชันเปิดแอป Instagram สำหรับมือถือ
+function openInstagramDirect(){
+    window.location.href = "instagram://app";
+    
+    setTimeout(() => {
+        window.open("https://www.instagram.com", "_blank");
+    }, 1000);
+}
+
+load();
+
+</script>
+
+</body>
+</html>
